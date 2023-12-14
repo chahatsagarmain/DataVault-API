@@ -17,3 +17,4 @@ class UserSerializer(serializers.ModelSerializer):
         instance.is_admin = validated_data.get("is_admin",instance.is_admin)
         instance.save()
         return instance
+    

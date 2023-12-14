@@ -105,10 +105,20 @@ class UserViews(APIView):
             
             return Response(response,status=rest_framework.status.HTTP_500_INTERNAL_SERVER_ERROR)
             
-    
-    def patch(self , request):
-        pass
+
     
     def delete(self , request , id):
-        pass
+        try:
+            user = Users.objects.get(id = id)
+            user.delete()
+            response = {"message" : "User deleted"}
+            return Response(response,status=rest_framework.status.HTTP_200_OK)
+        
+        except Users.DoesNotExist:
+            response = {"message" : "User does not exist"}
+            return Response(response,status=rest_framework.status.HTTP_404_NOT_FOUND)
+            
+        except Exception as e:
+            response = {"message" : f"Error occured {str(e)}"}
+            return Response(response , status=rest_framework.status.HTTP_500_INTERNAL_SERVER_ERROR)
         
