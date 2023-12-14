@@ -59,9 +59,56 @@ class UserViews(APIView):
             print(e)
             return  Response({"message" : str(e)} , status=rest_framework.status.HTTP_500_INTERNAL_SERVER_ERROR)
         
-    def update(self , request):
-        pass
+    def put(self , request , id=None,username=None):
+        print(username)
+        try:
+            if id is not None :
+                data = request.data
+                serialized_data = UserSerializer(data = data)
+
+                if serialized_data.is_valid():
+                    user = Users.objects.get(id = id)
+                    updated_user = serialized_data.update(user,serialized_data.data)
+                    serialized_updated_user = UserSerializer(updated_user)
+                    response = {"message" : "User updated" , "updated_user" : serialized_updated_user.data}
+                    return Response(response , status=rest_framework.status.HTTP_202_ACCEPTED)
+
+                else:
+                    response = {"message" : serialized_data.errors}
+
+                    return Response(response , status=rest_framework.status.HTTP_406_NOT_ACCEPTABLE)
+                
+            if username is not None:
+                data = request.data
+                serialized_data = UserSerializer(data = data)
+
+                if serialized_data.is_valid():
+                    user = Users.objects.get(user_name = username)
+                    updated_user = serialized_data.update(user,serialized_data.data)
+                    serialized_updated_user = UserSerializer(updated_user)
+                    response = {"message" : "User updated" , "updated_user" : serialized_updated_user.data}
+                    return Response(response , status=rest_framework.status.HTTP_202_ACCEPTED)
+
+                else:
+                    response = {"message" : serialized_data.errors}
+
+                    return Response(response , status=rest_framework.status.HTTP_406_NOT_ACCEPTABLE)
+            
+        
+        except Users.DoesNotExist as e:
+            response = {"message" : str(e)}
+            
+            return Response(response , status=rest_framework.status.HTTP_404_NOT_FOUND)
+        
+        except Exception as e :
+            response = {"message" : str(e)}
+            
+            return Response(response,status=rest_framework.status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
     
     def patch(self , request):
+        pass
+    
+    def delete(self , request , id):
         pass
         

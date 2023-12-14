@@ -9,4 +9,11 @@ class UserSerializer(serializers.ModelSerializer):
     
     def create(self,validated_data):
         return Users.objects.create(**validated_data)
-        
+
+    def update(self,instance,validated_data):
+        instance.user_name = validated_data.get("user_name",instance.user_name)
+        instance.email = validated_data.get("email",instance.email)
+        instance.is_active = validated_data.get("is_active",instance.is_active)
+        instance.is_admin = validated_data.get("is_admin",instance.is_admin)
+        instance.save()
+        return instance
