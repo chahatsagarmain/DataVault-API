@@ -10,7 +10,7 @@ def encrypt_password(password):
     key = os.getenv('ENCRYPTION_KEY')
     fernet = Fernet(key)
     encrypted_password = fernet.encrypt(password.encode())
-    return encrypted_password
+    return encrypted_password.decode()
     
 def decrypt_password(encrypted_password):
     

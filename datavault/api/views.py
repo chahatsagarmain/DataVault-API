@@ -5,17 +5,22 @@ from rest_framework.response import Response
 from .models import Users
 import rest_framework.status
 from .utils import encrypt_password
+from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework.permissions import IsAuthenticated
 
 class UserViews(APIView):
     
     # Fetch a user 
+    
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
         
     def get(self, request, id):
         try:
             user_raw = Users.objects.get(id=id)
             serialized_user = UserSerializer(user_raw) 
             response = {
-                "username" : serialized_user.data['user_name'],
+                "username" : serialized_user.data['username'],
                 "email" : serialized_user.data["email"],
                 "created_on" : serialized_user.data["created_on"],
                 "is_active" : serialized_user.data["is_active"],
@@ -41,9 +46,10 @@ class UserViews(APIView):
                 user_data = serialized.data
                 password = user_data.get("password")
                 
-                if password:
-                    encrypted_password = encrypt_password(password)
-                    user_data["password"] = encrypted_password
+                # if password:
+                #     encrypted_password = encrypt_password(password)
+                #     user_data["password"] = encrypted_password
+                    
                 
                 user_instance = serialized.create(validated_data=user_data)
                 
@@ -83,7 +89,7 @@ class UserViews(APIView):
                 serialized_data = UserSerializer(data = data)
 
                 if serialized_data.is_valid():
-                    user = Users.objects.get(user_name = username)
+                    user = Users.objects.get(username = username)
                     updated_user = serialized_data.update(user,serialized_data.data)
                     serialized_updated_user = UserSerializer(updated_user)
                     response = {"message" : "User updated" , "updated_user" : serialized_updated_user.data}
@@ -121,4 +127,18 @@ class UserViews(APIView):
         except Exception as e:
             response = {"message" : f"Error occured {str(e)}"}
             return Response(response , status=rest_framework.status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class LoginViews(APIView):
+    
+    def post(self,request):
         
+    
+
+
+class FileViews(APIView):
+    
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    
+    def get(self,request):
+        pass
