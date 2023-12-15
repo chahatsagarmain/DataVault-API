@@ -7,7 +7,9 @@ import rest_framework.status
 from .utils import encrypt_password
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated
-
+from .forms import LoginForm
+from django.contrib.auth import authenticate
+from rest_framework_simplejwt.tokens import RefreshToken
 class UserViews(APIView):
     
     # Fetch a user 
@@ -131,9 +133,32 @@ class UserViews(APIView):
 class LoginViews(APIView):
     
     def post(self,request):
-        
-    
+        try:
+            loginform = LoginForm(request.POST)
 
+            if loginform.is_valid():
+                email = loginform.cleaned_data["email"]
+                password = loginform.cleaned_data["password"]
+                user = Users.objects.get(email = email)
+                
+                if user and user.is_active:
+                    user = authenticate(username = user.username,password = password)
+                    response = Response(status=rest_framework.status.HTTP_202_ACCEPTED)
+                    token = RefreshToken.for_user(user)
+                    response['Authorization'] = f"Bearer {str(token)}"
+                    response['user_id'] = user.id 
+                    response['role'] = user.is_admin or 0
+                    
+                    return Response
+                    
+                    
+        except Users.DoesNotExist:
+            response = {"message" : "User does not exist"}
+            return Response(response , status=rest_framework.status.HTTP_404_NOT_FOUND)
+        
+        except Exception as e:
+            response = {"message" : str(e)}
+            return Response(response,status=rest_framework.status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class FileViews(APIView):
     
