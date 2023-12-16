@@ -10,6 +10,9 @@ from rest_framework.permissions import IsAuthenticated
 from .forms import LoginForm
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
+from .forms import RegisterForm
+
+
 class UserViews(APIView):
     
     # Fetch a user 
@@ -137,19 +140,24 @@ class LoginViews(APIView):
             loginform = LoginForm(request.POST)
 
             if loginform.is_valid():
+                
                 email = loginform.cleaned_data["email"]
                 password = loginform.cleaned_data["password"]
                 user = Users.objects.get(email = email)
-                
-                if user and user.is_active:
-                    user = authenticate(username = user.username,password = password)
-                    response = Response(status=rest_framework.status.HTTP_202_ACCEPTED)
-                    token = RefreshToken.for_user(user)
-                    response['Authorization'] = f"Bearer {str(token)}"
-                    response['user_id'] = user.id 
-                    response['role'] = user.is_admin or 0
+                if user and user.is_active and user.check_password(password):
                     
-                    return Response
+                    token = RefreshToken.for_user(user=user)
+                    response = {
+                        "token" : str(token),
+                        "user_id" : user.id,
+                        "role" : user.is_staff or 0
+                    }
+                    
+                    return Response(response , status=rest_framework.status.HTTP_202_ACCEPTED)
+                
+                else:
+                    response = {"message" : "Invalid Credentials"}
+                    return Response(response , status=rest_framework.status.HTTP_401_UNAUTHORIZED)
                     
                     
         except Users.DoesNotExist:
@@ -159,7 +167,41 @@ class LoginViews(APIView):
         except Exception as e:
             response = {"message" : str(e)}
             return Response(response,status=rest_framework.status.HTTP_500_INTERNAL_SERVER_ERROR)
-
+        
+        
+class RegsiterView(APIView):
+    
+    def post(self,request):
+        
+        try:
+            registerform = RegisterForm(request.POST)
+            
+            if registerform.is_valid():
+                
+                user_data = registerform.cleaned_data
+                serialised_data = UserSerializer(data = user_data)
+                if serialised_data.is_valid():
+                    
+                    created_user = serialised_data.create(serialised_data.data)
+                    token = RefreshToken.for_user(created_user)
+                    response_data = {
+                        "token" : str(token),
+                        "user_id" : created_user.id,
+                        "role" : 0
+                    }
+                    
+                    return Response(response_data , status=rest_framework.status.HTTP_201_CREATED)
+                
+                else:
+                    return Response(serialised_data.errors , status=rest_framework.status.HTTP_401_UNAUTHORIZED)
+            
+            else :
+                return Response(registerform.errors , status=rest_framework.status.HTTP_401_UNAUTHORIZED)
+                          
+        except Exception as e:
+            response = {"message" : str(e)}
+            return Response(response , status=rest_framework.status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
 class FileViews(APIView):
     
     authentication_classes = [JWTAuthentication]

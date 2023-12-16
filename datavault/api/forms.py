@@ -1,9 +1,15 @@
 from django import forms
+from .models import Users
 
 class LoginForm(forms.ModelForm):
     
-    email = forms.EmailField(required=True,help_text="Enter an email")
-    password = forms.CharField(max_length=256,
-                                required=True)
+    class Meta:
+        model = Users
+        fields = ['email','password']
     
+        
+class RegisterForm(forms.ModelForm):
     
+    class Meta:
+        model = Users
+        fields = ['email','username','password']
