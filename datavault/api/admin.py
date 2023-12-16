@@ -5,8 +5,9 @@ from .models import Users,FileInfo,Files
 
 @admin.register(Users)
 class UsersAdminModel(admin.ModelAdmin):
-    list_display = ('user_name','email','created_on','is_active','is_admin')
+    list_display = ('username','email','created_on','is_active','is_staff' ,'is_superuser')
     
     class Meta:
         ordering = ('id')
+
 

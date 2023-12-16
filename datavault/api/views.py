@@ -5,17 +5,27 @@ from rest_framework.response import Response
 from .models import Users
 import rest_framework.status
 from .utils import encrypt_password
+from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework.permissions import IsAuthenticated
+from .forms import LoginForm
+from django.contrib.auth import authenticate
+from rest_framework_simplejwt.tokens import RefreshToken
+from .forms import RegisterForm
+
 
 class UserViews(APIView):
     
     # Fetch a user 
+    
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
         
     def get(self, request, id):
         try:
             user_raw = Users.objects.get(id=id)
             serialized_user = UserSerializer(user_raw) 
             response = {
-                "username" : serialized_user.data['user_name'],
+                "username" : serialized_user.data['username'],
                 "email" : serialized_user.data["email"],
                 "created_on" : serialized_user.data["created_on"],
                 "is_active" : serialized_user.data["is_active"],
@@ -41,9 +51,10 @@ class UserViews(APIView):
                 user_data = serialized.data
                 password = user_data.get("password")
                 
-                if password:
-                    encrypted_password = encrypt_password(password)
-                    user_data["password"] = encrypted_password
+                # if password:
+                #     encrypted_password = encrypt_password(password)
+                #     user_data["password"] = encrypted_password
+                    
                 
                 user_instance = serialized.create(validated_data=user_data)
                 
@@ -83,7 +94,7 @@ class UserViews(APIView):
                 serialized_data = UserSerializer(data = data)
 
                 if serialized_data.is_valid():
-                    user = Users.objects.get(user_name = username)
+                    user = Users.objects.get(username = username)
                     updated_user = serialized_data.update(user,serialized_data.data)
                     serialized_updated_user = UserSerializer(updated_user)
                     response = {"message" : "User updated" , "updated_user" : serialized_updated_user.data}
@@ -121,4 +132,80 @@ class UserViews(APIView):
         except Exception as e:
             response = {"message" : f"Error occured {str(e)}"}
             return Response(response , status=rest_framework.status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class LoginViews(APIView):
+    
+    def post(self,request):
+        try:
+            loginform = LoginForm(request.POST)
+
+            if loginform.is_valid():
+                
+                email = loginform.cleaned_data["email"]
+                password = loginform.cleaned_data["password"]
+                user = Users.objects.get(email = email)
+                if user and user.is_active and user.check_password(password):
+                    
+                    token = RefreshToken.for_user(user=user)
+                    response = {
+                        "token" : str(token),
+                        "user_id" : user.id,
+                        "role" : user.is_staff or 0
+                    }
+                    
+                    return Response(response , status=rest_framework.status.HTTP_202_ACCEPTED)
+                
+                else:
+                    response = {"message" : "Invalid Credentials"}
+                    return Response(response , status=rest_framework.status.HTTP_401_UNAUTHORIZED)
+                    
+                    
+        except Users.DoesNotExist:
+            response = {"message" : "User does not exist"}
+            return Response(response , status=rest_framework.status.HTTP_404_NOT_FOUND)
         
+        except Exception as e:
+            response = {"message" : str(e)}
+            return Response(response,status=rest_framework.status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+        
+class RegsiterView(APIView):
+    
+    def post(self,request):
+        
+        try:
+            registerform = RegisterForm(request.POST)
+            
+            if registerform.is_valid():
+                
+                user_data = registerform.cleaned_data
+                serialised_data = UserSerializer(data = user_data)
+                if serialised_data.is_valid():
+                    
+                    created_user = serialised_data.create(serialised_data.data)
+                    token = RefreshToken.for_user(created_user)
+                    response_data = {
+                        "token" : str(token),
+                        "user_id" : created_user.id,
+                        "role" : 0
+                    }
+                    
+                    return Response(response_data , status=rest_framework.status.HTTP_201_CREATED)
+                
+                else:
+                    return Response(serialised_data.errors , status=rest_framework.status.HTTP_401_UNAUTHORIZED)
+            
+            else :
+                return Response(registerform.errors , status=rest_framework.status.HTTP_401_UNAUTHORIZED)
+                          
+        except Exception as e:
+            response = {"message" : str(e)}
+            return Response(response , status=rest_framework.status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+class FileViews(APIView):
+    
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    
+    def get(self,request):
+        pass

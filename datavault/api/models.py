@@ -1,10 +1,11 @@
 from django.db import models
+from django.contrib.auth.models import UserManager , AbstractBaseUser , PermissionsMixin
 
-class Users(models.Model):
+class Users(AbstractBaseUser,PermissionsMixin):
     
-    user_name = models.CharField(max_length=128,
+    username = models.CharField(max_length=128,
                                 blank=False,
-                                verbose_name="username")
+                                verbose_name="username" , unique = True)
     
     email = models.EmailField(verbose_name="user_email",
                               max_length=50,
@@ -19,15 +20,18 @@ class Users(models.Model):
 
     is_active = models.BooleanField(default=True)
     
-    is_admin = models.BooleanField(default=False)
+    is_staff = models.BooleanField(default=False)
+
+    is_superuser = models.BooleanField(default = False)    
     
+    objects = UserManager()
     
-    @property
-    def is_Admin(self):
-            return self.is_admin
+    REQUIRED_FIELDS = ['email']
+    USERNAME_FIELD = 'username'
         
-    # def __str__(self):  
-    #     return self.user_name
+    def __str__(self):  
+         return self.username
+    
         
 
 class FileInfo(models.Model):
