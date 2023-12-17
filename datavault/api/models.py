@@ -9,6 +9,7 @@ class Users(AbstractBaseUser,PermissionsMixin):
     
     email = models.EmailField(verbose_name="user_email",
                               max_length=50,
+                              unique=True,
                               null=False)
     
     password = models.CharField(verbose_name="user_password",
@@ -22,7 +23,9 @@ class Users(AbstractBaseUser,PermissionsMixin):
     
     is_staff = models.BooleanField(default=False)
 
-    is_superuser = models.BooleanField(default = False)    
+    is_admin = models.BooleanField(default = False)  
+    
+      
     
     objects = UserManager()
     
@@ -33,21 +36,14 @@ class Users(AbstractBaseUser,PermissionsMixin):
          return self.username
     
         
-
-class FileInfo(models.Model):
-
-    user_id = models.ForeignKey("Users",on_delete=models.CASCADE)
-    
-    file_date = models.DateField(auto_now_add=True)
-    
-    file_compressed = models.BooleanField(default=False)
-    
     
 class Files(models.Model):
+   
+    user_id = models.IntegerField(unique=True) 
+   
+    file_size = models.PositiveIntegerField("file size(in Bytes)",default=0)
     
-    file_id = models.ManyToManyField("FileInfo")
+    file_store = models.FileField(upload_to="../uploads/",default=0)
     
-    file_path = models.CharField(max_length=256)
-    
-    file_size = models.PositiveIntegerField("file size(in Bytes)")
+    file_compressed = models.BooleanField(default = False)
         

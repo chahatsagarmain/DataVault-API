@@ -6,7 +6,7 @@ class UserSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Users
-        fields = ['username','email','password','created_on','is_active','is_staff','is_superuser']
+        fields = '__all__'
     
     def create(self,validated_data):
         hasher = BCryptSHA256PasswordHasher()
@@ -21,4 +21,3 @@ class UserSerializer(serializers.ModelSerializer):
         instance.is_staff = validated_data.get("is_staff",instance.is_admin)
         instance.save()
         return instance
-    

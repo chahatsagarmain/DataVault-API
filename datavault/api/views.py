@@ -11,11 +11,11 @@ from .forms import LoginForm
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
 from .forms import RegisterForm
+from rest_framework.parsers import MultiPartParser,FormParser
 
 
 class UserViews(APIView):
     
-    # Fetch a user 
     
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
@@ -135,8 +135,11 @@ class UserViews(APIView):
 
 class LoginViews(APIView):
     
+    parser_classes = [MultiPartParser,FormParser]
+    
     def post(self,request):
         try:
+            print(request.POST)
             loginform = LoginForm(request.POST)
 
             if loginform.is_valid():
@@ -146,9 +149,9 @@ class LoginViews(APIView):
                 user = Users.objects.get(email = email)
                 if user and user.is_active and user.check_password(password):
                     
-                    token = RefreshToken.for_user(user=user)
+                    token = RefreshToken.for_user(user = user)
                     response = {
-                        "token" : str(token),
+                        "token" : str(token.access_token),
                         "user_id" : user.id,
                         "role" : user.is_staff or 0
                     }
@@ -171,6 +174,8 @@ class LoginViews(APIView):
         
 class RegsiterView(APIView):
     
+    parser_classes = [MultiPartParser,FormParser]
+    
     def post(self,request):
         
         try:
@@ -185,7 +190,7 @@ class RegsiterView(APIView):
                     created_user = serialised_data.create(serialised_data.data)
                     token = RefreshToken.for_user(created_user)
                     response_data = {
-                        "token" : str(token),
+                        "token" : str(token.access_token),
                         "user_id" : created_user.id,
                         "role" : 0
                     }
