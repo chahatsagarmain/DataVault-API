@@ -1,12 +1,12 @@
 from rest_framework import serializers
-from .models  import Users
+from .models  import Users , Files
 from django.contrib.auth.hashers import make_password , BCryptSHA256PasswordHasher
 
 class UserSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Users
-        fields = ['username','email','password','created_on','is_active','is_staff','is_superuser']
+        fields = '__all__'
     
     def create(self,validated_data):
         hasher = BCryptSHA256PasswordHasher()
@@ -21,4 +21,11 @@ class UserSerializer(serializers.ModelSerializer):
         instance.is_staff = validated_data.get("is_staff",instance.is_admin)
         instance.save()
         return instance
+
+class FileUploadSerialiser(serializers.ModelSerializer):
+    
+    class Meta:
+        model = Files
+        fields = '__all__'
+        
     

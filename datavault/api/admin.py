@@ -1,5 +1,5 @@
 from django.contrib import admin 
-from .models import Users,FileInfo,Files
+from .models import Users,Files
 
 # Register your models here.
 

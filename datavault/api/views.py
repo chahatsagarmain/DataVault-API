@@ -1,8 +1,8 @@
 from django.shortcuts import render
 from rest_framework.views import APIView
-from .serializers import UserSerializer
+from .serializers import UserSerializer , FileUploadSerialiser
 from rest_framework.response import Response
-from .models import Users
+from .models import Users , Files
 import rest_framework.status
 from .utils import encrypt_password
 from rest_framework_simplejwt.authentication import JWTAuthentication
@@ -10,12 +10,13 @@ from rest_framework.permissions import IsAuthenticated
 from .forms import LoginForm
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
-from .forms import RegisterForm
+from .forms import RegisterForm , FilesForm 
+from rest_framework.parsers import FileUploadParser , MultiPartParser , FormParser
+from rest_framework.viewsets import ModelViewSet
 
 
 class UserViews(APIView):
     
-    # Fetch a user 
     
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
@@ -135,8 +136,10 @@ class UserViews(APIView):
 
 class LoginViews(APIView):
     
+    
     def post(self,request):
         try:
+            print(request.POST)
             loginform = LoginForm(request.POST)
 
             if loginform.is_valid():
@@ -146,9 +149,9 @@ class LoginViews(APIView):
                 user = Users.objects.get(email = email)
                 if user and user.is_active and user.check_password(password):
                     
-                    token = RefreshToken.for_user(user=user)
+                    token = RefreshToken.for_user(user = user)
                     response = {
-                        "token" : str(token),
+                        "token" : str(token.access_token),
                         "user_id" : user.id,
                         "role" : user.is_staff or 0
                     }
@@ -171,6 +174,7 @@ class LoginViews(APIView):
         
 class RegsiterView(APIView):
     
+    
     def post(self,request):
         
         try:
@@ -185,7 +189,7 @@ class RegsiterView(APIView):
                     created_user = serialised_data.create(serialised_data.data)
                     token = RefreshToken.for_user(created_user)
                     response_data = {
-                        "token" : str(token),
+                        "token" : str(token.access_token),
                         "user_id" : created_user.id,
                         "role" : 0
                     }
@@ -206,6 +210,71 @@ class FileViews(APIView):
     
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
+    parser_classes = (MultiPartParser,FormParser)
     
-    def get(self,request):
-        pass
+    def post(self,request):
+        try:
+            file = request.FILES.get("file")
+            user_id = request.POST.get("user_id")
+            
+            print(file)
+            print(user_id)
+            
+            if not file or not user_id:
+                return Response({"message": "Both 'file' and 'user_id' are required."}, status=rest_framework.status.HTTP_400_BAD_REQUEST)
+            data = {"file_store": file, "file_name": file.name,"user_id": user_id}
+            print(data)
+            file_form = FileUploadSerialiser(data = data)
+            if file_form.is_valid():
+                file_form.save()
+                response = {"message" : "File is uploaded"}
+                return Response(response , status = rest_framework.status.HTTP_201_CREATED)
+        
+            else:
+                print(file_form.errors)
+                response = {"message" : file_form.errors}
+                return Response(response , status=rest_framework.status.HTTP_400_BAD_REQUEST)
+        
+        
+        except Exception as e:
+            print(e)
+            response = {"message" : str(e)}
+            return Response(response , status = rest_framework.status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+    def get(self,request,pk):
+        try:
+            user_id = pk
+            if user_id:
+                file_list = Files.objects.filter(user_id = user_id)
+                serialized_file_list = FileUploadSerialiser(file_list,many=True)
+                if not file_list:
+                    response = {"message" : "No file found"}
+                    return  Response(response , status=rest_framework.status.HTTP_404_NOT_FOUND)
+
+                file_name = [item.get("file_name",[]) for item in serialized_file_list.data]
+                response = {"file_names" : file_name}
+                return Response(response  , status=rest_framework.status.HTTP_202_ACCEPTED)
+    
+
+        except Exception as e:
+            response = {"message" : str(e)}
+            return Response(response,status=rest_framework.status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    def delete(self , request):
+        try:
+            file_name = request.POST.get("file_name",None) or request.body.get("file_name" , None)
+            if not file_name:
+                response = {"message" : "Please enter a file_name"}
+                return Response(response ,status=rest_framework.status.HTTP_400_BAD_REQUEST)
+            
+            file_found = Files.objects.get(file_name=file_name)
+            if not file_found:
+                response  = {"message" : "File not found with the file name"}
+                return Response(response , status=rest_framework.status.HTTP_404_NOT_FOUND)
+            
+            file_found.delete()
+            response = {"message" : "File deleted successfully"}
+            return Response(response , status=rest_framework.status.HTTP_200_OK)
+        except Exception as e:
+            response = {"message" : str(e)}
+            return Response(response, status=rest_framework.status.HTTP_500_INTERNAL_SERVER_ERROR)
