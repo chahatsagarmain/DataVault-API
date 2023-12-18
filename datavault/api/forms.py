@@ -20,3 +20,4 @@ class FilesForm(forms.ModelForm):
     class Meta:
         model = Files
         fields = '__all__'
+        

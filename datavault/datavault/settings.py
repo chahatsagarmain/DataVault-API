@@ -44,6 +44,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -176,3 +177,13 @@ SIMPLE_JWT = {
 
 SECRET_KEY = "eyJhbGciOiJIUzI1NiJ9.eyJSb2xlIjoiQWRtaW4iLCJJc3N1ZXIiOiJJc3N1ZXIiLCJVc2VybmFtZSI6IkphdmFJblVzZSIsImV4cCI6MTcwMjY0NDQxOCwiaWF0IjoxNzAyNjQ0NDE4fQ.uVdOkOZSuWu5s6JHSmN8Fq0YJEdlXB9T0B8KH_U1COo"
 AUTH_USER_MODEL = "api.Users"
+CORS_ALLOWED_ORIGINS = [
+"http://127.0.0.1:5500"]
+
+
+
+CORS_ALLOW_HEADERS = [
+    'user_id',
+    'authorization',  
+    'content-type',
+]

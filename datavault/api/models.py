@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import UserManager , AbstractBaseUser , PermissionsMixin
+import datetime
 
 class Users(AbstractBaseUser,PermissionsMixin):
     
@@ -39,11 +40,14 @@ class Users(AbstractBaseUser,PermissionsMixin):
     
 class Files(models.Model):
    
-    user_id = models.IntegerField(unique=True) 
-   
-    file_size = models.PositiveIntegerField("file size(in Bytes)",default=0)
+    user_id = models.ForeignKey('Users',on_delete=models.CASCADE)
+
+    file_name = models.CharField(db_column='name', max_length=200, default="file_name",unique=True)
     
-    file_store = models.FileField(upload_to="../uploads/",default=0)
+    file_store = models.FileField(upload_to=f"./uploads/{datetime.datetime.now()}")
     
-    file_compressed = models.BooleanField(default = False)
-        
+    def __str__(self):
+        return self.file_name 
+    
+    
+        # def create(self,*args,**kwargs):
